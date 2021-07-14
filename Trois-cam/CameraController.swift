@@ -68,10 +68,9 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
             //        print(movieFileOutput?.isRecording)
             
             if self.movieFileOutput?.isRecording == false{
-                let outputFileName = NSUUID().uuidString
-                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
-                print(outputFilePath)
-                
+                let outputFileName = "finger"
+                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mp4")!)
+
                 self.movieFileOutput?.startRecording(to: URL(fileURLWithPath: outputFilePath), recordingDelegate: self)
                 
                 //            print(movieFileOutput?.isRecording)
@@ -91,9 +90,9 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
             
 
             if self.movieFileOutput2?.isRecording == false{
-                let outputFileName = NSUUID().uuidString
-                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
-                print(outputFilePath)
+                let outputFileName = "Front"
+                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mp4")!)
+        
                 
                 self.movieFileOutput2?.startRecording(to: URL(fileURLWithPath: outputFilePath), recordingDelegate: self)
 

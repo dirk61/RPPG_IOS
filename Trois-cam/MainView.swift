@@ -18,9 +18,9 @@ struct MainView: View {
        
         NavigationView{
             VStack(alignment: .leading, spacing: 7.0) {
-                Text("Your Name")
+                Text("Your ID")
                     .multilineTextAlignment(.leading)
-                TextField("Name", text:$Name)
+                TextField("ID", text:$Name)
                 
                 Text("Age")
                     .multilineTextAlignment(.leading)
@@ -29,17 +29,11 @@ struct MainView: View {
                 Text("Gender")
                     .multilineTextAlignment(.leading)
                 TextField("Gender", text:$Gender)
-                
-                
-                
-                Button(action: {}, label: {
-                    Text("Start Survey")
-                })
-                
+            
                 NavigationLink(
                     destination: ExperimentView(),
                     label: {
-                        Text("Navigate")
+                        Text("Start Survey")
                     })
                 Spacer()
             }

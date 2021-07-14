@@ -13,23 +13,41 @@ import CoreLocation
 import Photos
 import CoreMotion
 
-
+let subNet = "103"
 
 let motion = CMMotionManager()
 let accName = "Accelerometer.csv"
 let gyroName = "GyroScope.csv"
 let magneName = "Magnenometer.csv"
+let waveName = "Wave.csv"
+let frontName = "Front.mov"
 
 let documentDirectoryPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] as String
 
-let documentURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(accName)
+let accURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(accName)
+let gyroURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(gyroName)
+let magneURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(magneName)
+let waveURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(waveName)
+let frontURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(frontName)
 
-let output = OutputStream.toMemory()
-let csvWriter = CHCSVWriter(outputStream: output, encoding: String.Encoding.utf8.rawValue, delimiter: ",".utf16.first!)
-let buffer = (output.property(forKey: .dataWrittenToMemoryStreamKey) as? Data)!
+let accOutput = OutputStream.toMemory()
+let accCsvWriter = CHCSVWriter(outputStream: accOutput, encoding: String.Encoding.utf8.rawValue, delimiter: ",".utf16.first!)
+let accBuffer = (accOutput.property(forKey: .dataWrittenToMemoryStreamKey) as? Data)!
+
+let gyroOutput = OutputStream.toMemory()
+let gyroCsvWriter = CHCSVWriter(outputStream: gyroOutput, encoding: String.Encoding.utf8.rawValue, delimiter: ",".utf16.first!)
+let gyroBuffer = (gyroOutput.property(forKey: .dataWrittenToMemoryStreamKey) as? Data)!
+
+let magneOutput = OutputStream.toMemory()
+let magneCsvWriter = CHCSVWriter(outputStream: magneOutput, encoding: String.Encoding.utf8.rawValue, delimiter: ",".utf16.first!)
+let magneBuffer = (magneOutput.property(forKey: .dataWrittenToMemoryStreamKey) as? Data)!
+
+let waveOutput = OutputStream.toMemory()
+let waveCsvWriter = CHCSVWriter(outputStream: waveOutput, encoding: String.Encoding.utf8.rawValue, delimiter: ",".utf16.first!)
+let waveBuffer = (waveOutput.property(forKey: .dataWrittenToMemoryStreamKey) as? Data)!
 
 struct ContentView: View{
-    @State private var timeRemaining = 65
+    @State private var timeRemaining = 10
     @State private var start = false
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -47,12 +65,10 @@ struct ContentView: View{
                 }
                 
             }
-            Button(action: {urlConnection(u: "http://192.168.1.103:5000")}, label: {
-                Text("Request")
-            })
+            
             Button(action: {toggleTorch(on: true)},label:{Text("Flash")})
             Text("Time:\(timeRemaining)")
-            Button(action:{start = true; cameraSource.startRecord(); toggleTorch(on: true); cameraSource.startRecord2(); urlConnection(u: "http://192.168.1.103:5000"); collectSensorData()},label:{Text("Start Survey")})
+            Button(action:{start = true; cameraSource.startRecord(); toggleTorch(on: true); cameraSource.startRecord2(); urlConnection(u: "http://192.168.1." + subNet + ":5000"); urlConnection(u: "http://192.168.1." + subNet + ":5000/upload");collectSensorData()},label:{Text("Start Survey")})
             //            Toggle("Start Survey", isOn: $start)
             
             Spacer()
@@ -64,7 +80,9 @@ struct ContentView: View{
             else if self.timeRemaining == 0{
                 cameraSource.stopRecord()
                 cameraSource.stopRecord2()
-                urlConnection(u: "http://192.168.1.103:5000/dirk")
+                urlConnection(u: "http://192.168.1." + subNet + ":5000/dirk")
+                sleep(1)
+                urlConnection(u: "http://192.168.1." + subNet + ":5000/get")
                 self.timeRemaining -= 1
                 stopDataCollection()
             }
@@ -103,29 +121,66 @@ func toggleTorch(on: Bool) {
 
 func urlConnection(u: String)
 {
-    //    HTTP.GET("https://192.168.1.103:5000") { response in
-    //        if let err = response.error {
-    //            print("error: \(err.localizedDescription)")
-    //            return //also notify app of failure as needed
-    //        }
-    //        print("opt finished: \(response.description)")
-    //print("data is: \(response.data)") access the response of the data with response.data
-    //    }
-    let url = URL(string: u)!
     
-    var request = URLRequest(url: url)
-    
-    let task = URLSession.shared.dataTask(with: url) { data, response, error in
-        if let data = data {
+    if (u == "http://192.168.1." + subNet + ":5000/upload"){
+        let params = ["timestamp": String(Int(Date().timeIntervalSince1970 * 1000)), "nameagegender":"Yuki", "experiment": "Playground"]
+        
+        HTTP.POST(u, parameters: params) { response in
             
-        } else if let error = error {
-            print("HTTP Request Failed \(error)")
+            //            print(response)
         }
+        
     }
-    //
-    task.resume()
-    
-    
+    else if(u == "http://192.168.1." + subNet + ":5000/get")
+    {
+        HTTP.GET(u){
+            response in
+            let responseArr = response.text!.components(separatedBy: "\n")
+            print(responseArr)
+            for row in responseArr{
+                print(row)
+                if row == ""{
+                    print(1)
+                }
+                else{
+                    print(0)
+                    let timestamp = row.components(separatedBy: ",")[0]
+                    let value = row.components(separatedBy: ",")[1]
+                    waveCsvWriter?.writeField(timestamp)
+                    waveCsvWriter?.writeField(value)
+
+                    waveCsvWriter?.finishLine()
+                }
+                
+            }
+            do{
+                try waveBuffer.write(to: waveURL)
+            }
+            catch{
+                
+            }
+            
+        }
+        
+    }
+    else{
+        
+        
+        let url = URL(string: u)!
+        
+        var request = URLRequest(url: url)
+        
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data {
+                
+            } else if let error = error {
+                print("HTTP Request Failed \(error)")
+            }
+        }
+        //
+        task.resume()
+        
+    }
 }
 
 func collectSensorData(){
@@ -143,26 +198,27 @@ func collectSensorData(){
         var timer = Timer(fire: Date(), interval: (1.0/30.0), repeats: true, block: {(timer) in
             if let data = motion.accelerometerData{
                 
-                csvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
-                csvWriter?.writeField(String(data.acceleration.x))
-                csvWriter?.writeField(String(data.acceleration.y))
-                csvWriter?.writeField(String(data.acceleration.z))
-                csvWriter?.finishLine()
-                
-                //                csvWriter?.closeStream()
-                
-                
-                
-                
-                //                print(data.acceleration.x as Any)
+                accCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
+                accCsvWriter?.writeField(String(data.acceleration.x))
+                accCsvWriter?.writeField(String(data.acceleration.y))
+                accCsvWriter?.writeField(String(data.acceleration.z))
+                accCsvWriter?.finishLine()
             }
             
             if let data = motion.gyroData{
-                
+                gyroCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
+                gyroCsvWriter?.writeField(String(data.rotationRate.x))
+                gyroCsvWriter?.writeField(String(data.rotationRate.y))
+                gyroCsvWriter?.writeField(String(data.rotationRate.z))
+                gyroCsvWriter?.finishLine()
             }
             
             if let data = motion.magnetometerData{
-                
+                magneCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
+                magneCsvWriter?.writeField(String(data.magneticField.x))
+                magneCsvWriter?.writeField(String(data.magneticField.y))
+                magneCsvWriter?.writeField(String(data.magneticField.z))
+                magneCsvWriter?.finishLine()
             }
             
         })
@@ -173,7 +229,9 @@ func collectSensorData(){
 
 func stopDataCollection() {
     do{
-        try buffer.write(to: documentURL)
+        try accBuffer.write(to: accURL)
+        try gyroBuffer.write(to: gyroURL)
+        try magneBuffer.write(to: magneURL)
     }
     catch{
         
