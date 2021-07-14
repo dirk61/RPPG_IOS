@@ -63,7 +63,7 @@ enum Experiments: String, CaseIterable, Identifiable{
     var id: String{ self.rawValue}
 }
 struct ContentView: View{
-    @State private var timeRemaining = 3
+    @State private var timeRemaining = 10
     @State private var start = false
     @State private var selectedExperiment = Experiments.Playground
     
@@ -110,10 +110,12 @@ struct ContentView: View{
                 cameraSource.stopRecord()
                 cameraSource.stopRecord2()
                 urlConnection(u: "http://192.168.1." + subNet + ":5000/dirk")
-                sleep(1)
-                urlConnection(u: "http://192.168.1." + subNet + ":5000/get")
-                self.timeRemaining -= 1
                 stopDataCollection()
+                self.timeRemaining -= 1
+                usleep(3000000)
+                urlConnection(u: "http://192.168.1." + subNet + ":5000/get")
+                
+                
             }
         }
         
@@ -150,9 +152,10 @@ func toggleTorch(on: Bool) {
 
 func urlConnection(u: String)
 {
-    
+    let lowerBounds = String.Index(encodedOffset: 1)
     if (u == "http://192.168.1." + subNet + ":5000/upload"){
-        let params = ["timestamp": String(Int(Date().timeIntervalSince1970 * 1000)), "nameagegender":"Yuki", "experiment": "Playground"]
+        var ex:String = String(ExperimentStr[lowerBounds...])
+        let params = ["timestamp": String(Int(Date().timeIntervalSince1970 * 1000)), "nameagegender":"Yuki", "experiment": ex]
         
         HTTP.POST(u, parameters: params) { response in
             
