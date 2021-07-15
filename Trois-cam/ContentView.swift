@@ -13,7 +13,7 @@ import CoreLocation
 import Photos
 import CoreMotion
 
-let subNet = "103"
+let subNet = "104"
 
 let motion = CMMotionManager()
 
@@ -63,7 +63,7 @@ enum Experiments: String, CaseIterable, Identifiable{
     var id: String{ self.rawValue}
 }
 struct ContentView: View{
-    @State private var timeRemaining = 10
+    @State private var timeRemaining = 15
     @State private var start = false
     @State private var selectedExperiment = Experiments.Playground
     
