@@ -119,9 +119,9 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
         
         session = AVCaptureMultiCamSession()
         session.beginConfiguration()
-        
         //
         let device2 = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front)!
+        
         let input2 = try! AVCaptureDeviceInput(device: device2)
         session.addInputWithNoConnections(input2)
         

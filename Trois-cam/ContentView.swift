@@ -13,7 +13,7 @@ import CoreLocation
 import Photos
 import CoreMotion
 
-let subNet = "104"
+let subNet = "100"
 
 let motion = CMMotionManager()
 
@@ -63,10 +63,10 @@ enum Experiments: String, CaseIterable, Identifiable{
     var id: String{ self.rawValue}
 }
 struct ContentView: View{
-    @State private var timeRemaining = 15
+    @State private var timeRemaining = 65
     @State private var start = false
     @State private var selectedExperiment = Experiments.Playground
-    
+    @State private var selectedMode = "Auto"
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     let cameraSource = CameraController()
@@ -86,6 +86,7 @@ struct ContentView: View{
                 Text("Running").tag(Experiments.Running)
             }
             Text("Selected:\(selectedExperiment.rawValue)")
+            Text("Selected:\(selectedMode)")
             HStack(spacing:0){
                 
                 ForEach(Array([Color.green, Color.red].enumerated()),id: \.offset){ (index,value) in
@@ -97,7 +98,10 @@ struct ContentView: View{
             
             Button(action: {toggleTorch(on: true)},label:{Text("Flash")})
             Text("Time:\(timeRemaining)")
-            Button(action:{start = true;ExperimentStr = enum2String(e: selectedExperiment);accURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + accName);gyroURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + gyroName);magneURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + magneName);waveURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + waveName); cameraSource.startRecord(); toggleTorch(on: true); cameraSource.startRecord2(); urlConnection(u: "http://192.168.1." + subNet + ":5000"); urlConnection(u: "http://192.168.1." + subNet + ":5000/upload");collectSensorData()},label:{Text("Start Survey")})
+            Button(action: {manualISO();selectedMode="Manual"},label:{Text("manual")})
+            Button(action: {autoISO();selectedMode = "Auto"},label:{Text("auto")})
+            
+            Button(action:{start = true;manualISOBack();ExperimentStr = enum2String(e: selectedExperiment);accURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + accName);gyroURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + gyroName);magneURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + magneName);waveURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + waveName); cameraSource.startRecord(); toggleTorch(on: true); cameraSource.startRecord2(); urlConnection(u: "http://192.168.1." + subNet + ":5000"); urlConnection(u: "http://192.168.1." + subNet + ":5000/upload");collectSensorData()},label:{Text("Start Survey")})
             //            Toggle("Start Survey", isOn: $start)
             
             Spacer()
@@ -150,151 +154,219 @@ func toggleTorch(on: Bool) {
     }
 }
 
-func urlConnection(u: String)
+func manualISO()
 {
-    let lowerBounds = String.Index(encodedOffset: 1)
-    if (u == "http://192.168.1." + subNet + ":5000/upload"){
-        var ex:String = String(ExperimentStr[lowerBounds...])
-        let params = ["timestamp": String(Int(Date().timeIntervalSince1970 * 1000)), "nameagegender":"Yuki", "experiment": ex]
+
+    guard let device = AVCaptureDevice.default(.builtInTrueDepthCamera,for: .video, position: .front) else { return }
+    
+    
+    do {
+        try device.lockForConfiguration()
+        device.exposureMode = .custom
+        device.setExposureModeCustom(duration: CMTimeMake(value: 1, timescale: 50), iso: 100, completionHandler: nil)
+        device.whiteBalanceMode = .locked
         
-        HTTP.POST(u, parameters: params) { response in
-            
-            //            print(response)
-        }
-        
+        device.unlockForConfiguration()
+    } catch {
+        print("Torch could not be used")
     }
-    else if(u == "http://192.168.1." + subNet + ":5000/get")
+}
+    
+    func autoISO()
     {
-        HTTP.GET(u){
-            response in
-            let responseArr = response.text!.components(separatedBy: "\n")
-            print(responseArr)
-            for row in responseArr{
-                print(row)
-                if row == ""{
-                    print(1)
-                }
-                else{
-                    print(0)
-                    let timestamp = row.components(separatedBy: ",")[0]
-                    let value = row.components(separatedBy: ",")[1]
-                    waveCsvWriter?.writeField(timestamp)
-                    waveCsvWriter?.writeField(value)
+        guard let device = AVCaptureDevice.default(.builtInTrueDepthCamera,for: .video, position: .front) else { return }
 
-                    waveCsvWriter?.finishLine()
-                }
+        
+        do {
+            try device.lockForConfiguration()
+            
+            device.exposureMode = .autoExpose
+            device.whiteBalanceMode = .autoWhiteBalance
+            
+            device.unlockForConfiguration()
+        } catch {
+            print("Torch could not be used")
+        }
+        
+    }
+func manualISOBack()
+{
+    
+    guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
+    
+    
+    do {
+        try device.lockForConfiguration()
+        device.exposureMode = .locked
+        device.whiteBalanceMode = .locked
+        
+        device.unlockForConfiguration()
+    } catch {
+        print("Torch could not be used")
+    }
+}
+    
+    func autoISOBack()
+    {
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
+
+        
+        do {
+            try device.lockForConfiguration()
+            
+            device.exposureMode = .autoExpose
+            
+            device.unlockForConfiguration()
+        } catch {
+            print("Torch could not be used")
+        }
+        
+    }
+    func urlConnection(u: String)
+    {
+        let lowerBounds = String.Index(encodedOffset: 1)
+        if (u == "http://192.168.1." + subNet + ":5000/upload"){
+            var ex:String = String(ExperimentStr[lowerBounds...])
+            let params = ["timestamp": String(Int(Date().timeIntervalSince1970 * 1000)), "nameagegender":"Yuki", "experiment": ex]
+            
+            HTTP.POST(u, parameters: params) { response in
                 
+                //            print(response)
             }
-            do{
-                try waveBuffer.write(to: waveURL)
-            }
-            catch{
+            
+        }
+        else if(u == "http://192.168.1." + subNet + ":5000/get")
+        {
+            HTTP.GET(u){
+                response in
+                let responseArr = response.text!.components(separatedBy: "\n")
+                print(responseArr)
+                for row in responseArr{
+                    print(row)
+                    if row == ""{
+                        print(1)
+                    }
+                    else{
+                        print(0)
+                        let timestamp = row.components(separatedBy: ",")[0]
+                        let value = row.components(separatedBy: ",")[1]
+                        waveCsvWriter?.writeField(timestamp)
+                        waveCsvWriter?.writeField(value)
+                        
+                        waveCsvWriter?.finishLine()
+                    }
+                    
+                }
+                do{
+                    try waveBuffer.write(to: waveURL)
+                }
+                catch{
+                    
+                }
                 
             }
             
         }
-        
-    }
-    else{
-        
-        
-        let url = URL(string: u)!
-        
-        var request = URLRequest(url: url)
-        
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            if let data = data {
-                
-            } else if let error = error {
-                print("HTTP Request Failed \(error)")
+        else{
+            
+            
+            let url = URL(string: u)!
+            
+            var request = URLRequest(url: url)
+            
+            let task = URLSession.shared.dataTask(with: url) { data, response, error in
+                if let data = data {
+                    
+                } else if let error = error {
+                    print("HTTP Request Failed \(error)")
+                }
             }
+            //
+            task.resume()
+            
         }
-        //
-        task.resume()
-        
     }
-}
-
-func collectSensorData(){
     
-    
-    if motion.isAccelerometerAvailable && motion.isGyroAvailable && motion.isMagnetometerAvailable{
-        motion.accelerometerUpdateInterval = 1.0 / 60.0
-        motion.gyroUpdateInterval = 1.0 / 60.0
-        motion.magnetometerUpdateInterval = 1.0 / 60.0
+    func collectSensorData(){
         
-        motion.startAccelerometerUpdates()
-        motion.startGyroUpdates()
-        motion.startMagnetometerUpdates()
         
-        var timer = Timer(fire: Date(), interval: (1.0/30.0), repeats: true, block: {(timer) in
-            if let data = motion.accelerometerData{
+        if motion.isAccelerometerAvailable && motion.isGyroAvailable && motion.isMagnetometerAvailable{
+            motion.accelerometerUpdateInterval = 1.0 / 60.0
+            motion.gyroUpdateInterval = 1.0 / 60.0
+            motion.magnetometerUpdateInterval = 1.0 / 60.0
+            
+            motion.startAccelerometerUpdates()
+            motion.startGyroUpdates()
+            motion.startMagnetometerUpdates()
+            
+            var timer = Timer(fire: Date(), interval: (1.0/30.0), repeats: true, block: {(timer) in
+                if let data = motion.accelerometerData{
+                    
+                    accCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
+                    accCsvWriter?.writeField(String(data.acceleration.x))
+                    accCsvWriter?.writeField(String(data.acceleration.y))
+                    accCsvWriter?.writeField(String(data.acceleration.z))
+                    accCsvWriter?.finishLine()
+                }
                 
-                accCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
-                accCsvWriter?.writeField(String(data.acceleration.x))
-                accCsvWriter?.writeField(String(data.acceleration.y))
-                accCsvWriter?.writeField(String(data.acceleration.z))
-                accCsvWriter?.finishLine()
-            }
+                if let data = motion.gyroData{
+                    gyroCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
+                    gyroCsvWriter?.writeField(String(data.rotationRate.x))
+                    gyroCsvWriter?.writeField(String(data.rotationRate.y))
+                    gyroCsvWriter?.writeField(String(data.rotationRate.z))
+                    gyroCsvWriter?.finishLine()
+                }
+                
+                if let data = motion.magnetometerData{
+                    magneCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
+                    magneCsvWriter?.writeField(String(data.magneticField.x))
+                    magneCsvWriter?.writeField(String(data.magneticField.y))
+                    magneCsvWriter?.writeField(String(data.magneticField.z))
+                    magneCsvWriter?.finishLine()
+                }
+                
+            })
             
-            if let data = motion.gyroData{
-                gyroCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
-                gyroCsvWriter?.writeField(String(data.rotationRate.x))
-                gyroCsvWriter?.writeField(String(data.rotationRate.y))
-                gyroCsvWriter?.writeField(String(data.rotationRate.z))
-                gyroCsvWriter?.finishLine()
-            }
-            
-            if let data = motion.magnetometerData{
-                magneCsvWriter?.writeField(String(Int(Date().timeIntervalSince1970 * 1000)))
-                magneCsvWriter?.writeField(String(data.magneticField.x))
-                magneCsvWriter?.writeField(String(data.magneticField.y))
-                magneCsvWriter?.writeField(String(data.magneticField.z))
-                magneCsvWriter?.finishLine()
-            }
-            
-        })
-        
-        RunLoop.current.add(timer, forMode: .default)
-    }
-}
-
-func enum2String(e: Experiments) -> String{
-    switch e {
-    case Experiments.Natural_Stationary:
-    return "/Natural Stationary"
-    case Experiments.LED_Stationary:
-        return "/Led Stationary"
-    case Experiments.Playground:
-        return "/Playground"
-    case Experiments.Randomly:
-        return "/Randomly"
-    case Experiments.Left_Right:
-        return "/Left Right"
-    case Experiments.Talking:
-        return "/Talking"
-    case Experiments.Running:
-        return "/Running"
-    case Experiments.Incandescent_Stationary:
-        return "/Incandescent Stationary"
-    default:
-        break
-    }
-}
-
-func stopDataCollection() {
-    do{
-
-        try accBuffer.write(to: accURL)
-        try gyroBuffer.write(to: gyroURL)
-        try magneBuffer.write(to: magneURL)
-    }
-    catch{
-        
+            RunLoop.current.add(timer, forMode: .default)
+        }
     }
     
-    motion.stopGyroUpdates()
-    motion.stopMagnetometerUpdates()
-    motion.stopAccelerometerUpdates()
-}
+    func enum2String(e: Experiments) -> String{
+        switch e {
+        case Experiments.Natural_Stationary:
+            return "/Natural Stationary"
+        case Experiments.LED_Stationary:
+            return "/Led Stationary"
+        case Experiments.Playground:
+            return "/Playground"
+        case Experiments.Randomly:
+            return "/Randomly"
+        case Experiments.Left_Right:
+            return "/Left Right"
+        case Experiments.Talking:
+            return "/Talking"
+        case Experiments.Running:
+            return "/Running"
+        case Experiments.Incandescent_Stationary:
+            return "/Incandescent Stationary"
+        default:
+            break
+        }
+    }
+    
+    func stopDataCollection() {
+        do{
+            
+            try accBuffer.write(to: accURL)
+            try gyroBuffer.write(to: gyroURL)
+            try magneBuffer.write(to: magneURL)
+        }
+        catch{
+            
+        }
+        
+        motion.stopGyroUpdates()
+        motion.stopMagnetometerUpdates()
+        motion.stopAccelerometerUpdates()
+    }
 
