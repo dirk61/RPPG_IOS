@@ -14,20 +14,20 @@ import Photos
 class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         print("finishrecording")
-        // Check the authorization status.
-        PHPhotoLibrary.requestAuthorization { status in
-            if status == .authorized {
-                // Save the movie file to the photo library and cleanup.
-                PHPhotoLibrary.shared().performChanges({
-                    let options = PHAssetResourceCreationOptions()
-                    options.shouldMoveFile = true
-                    let creationRequest = PHAssetCreationRequest.forAsset()
-                    creationRequest.addResource(with: .video, fileURL: outputFileURL, options: options)
-                    
-                }
-                )
-            }
-        }
+//        // Check the authorization status.
+//        PHPhotoLibrary.requestAuthorization { status in
+//            if status == .authorized {
+//                // Save the movie file to the photo library and cleanup.
+//                PHPhotoLibrary.shared().performChanges({
+//                    let options = PHAssetResourceCreationOptions()
+//                    options.shouldMoveFile = true
+//                    let creationRequest = PHAssetCreationRequest.forAsset()
+//                    creationRequest.addResource(with: .video, fileURL: outputFileURL, options: options)
+//
+//                }
+//                )
+//            }
+//        }
     }
     
     func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
@@ -70,9 +70,12 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
             if self.movieFileOutput?.isRecording == false{
                 let lowerbound = String.Index(encodedOffset: 1)
                 let outputFileName = ExperimentStr[lowerbound...] +  "_Front"
-                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
+//                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
 
-                self.movieFileOutput?.startRecording(to: URL(fileURLWithPath: outputFilePath), recordingDelegate: self)
+                let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+                let fileUrl = paths[0].appendingPathComponent(outputFileName + ".mov")
+                print(fileUrl.absoluteString)
+                self.movieFileOutput?.startRecording(to: frontURL, recordingDelegate: self)
                 
                 //            print(movieFileOutput?.isRecording)
             }}}
@@ -93,10 +96,12 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
             if self.movieFileOutput2?.isRecording == false{
                 let lowerbound = String.Index(encodedOffset: 1)
                 let outputFileName = ExperimentStr[lowerbound...] + "_finger"
-                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
-        
+//                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
                 
-                self.movieFileOutput2?.startRecording(to: URL(fileURLWithPath: outputFilePath), recordingDelegate: self)
+                let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+                let fileUrl = paths[0].appendingPathComponent(outputFileName + ".mov")
+                
+                self.movieFileOutput2?.startRecording(to: fingerURL, recordingDelegate: self)
 
             }}}
     

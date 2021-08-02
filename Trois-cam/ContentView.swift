@@ -24,6 +24,7 @@ let gyroName = "/GyroScope.csv"
 let magneName = "/Magnenometer.csv"
 let waveName = "/Wave.csv"
 let frontName = "/Front.mov"
+let fingerName = "/PPG.mov"
 
 let documentDirectoryPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] as String
 
@@ -32,6 +33,7 @@ var gyroURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent
 var magneURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + magneName)
 var waveURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + waveName)
 var frontURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + frontName)
+var fingerURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + fingerName)
 
 var accOutput = OutputStream.toMemory()
 var accCsvWriter = CHCSVWriter(outputStream: accOutput, encoding: String.Encoding.utf8.rawValue, delimiter: ",".utf16.first!)
@@ -102,7 +104,7 @@ struct ContentView: View{
             Button(action: {manualISO();selectedMode="Manual"},label:{Text("manual")})
             Button(action: {autoISO();selectedMode = "Auto"},label:{Text("auto")})
             
-            Button(action:{start = true;manualISOBack();ExperimentStr = enum2String(e: selectedExperiment);accURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + accName);gyroURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + gyroName);magneURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + magneName);waveURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + waveName); cameraSource.startRecord(); toggleTorch(on: true); cameraSource.startRecord2(); urlConnection(u: "http://192.168.1." + subNet + ":5000"); urlConnection(u: "http://192.168.1." + subNet + ":5000/upload");collectSensorData()},label:{Text("Start Survey")})
+            Button(action:{start = true;manualISOBack();ExperimentStr = enum2String(e: selectedExperiment);frontURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + frontName);fingerURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment)+fingerName);accURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + accName);gyroURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + gyroName);magneURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + magneName);waveURL = URL(fileURLWithPath: documentDirectoryPath).appendingPathComponent(ID + enum2String(e: selectedExperiment) + waveName); cameraSource.startRecord(); toggleTorch(on: true); cameraSource.startRecord2(); urlConnection(u: "http://192.168.1." + subNet + ":5000"); urlConnection(u: "http://192.168.1." + subNet + ":5000/upload");collectSensorData()},label:{Text("Start Survey")})
             //            Toggle("Start Survey", isOn: $start)
             
             Spacer()
