@@ -23,6 +23,8 @@
 		5B201AB8269DA3E1005AB255 /* StatusCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B201AB3269DA3E1005AB255 /* StatusCode.swift */; };
 		5B201AB9269DA3E1005AB255 /* Operation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B201AB4269DA3E1005AB255 /* Operation.swift */; };
 		5B201ABA269DA3E1005AB255 /* Upload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B201AB5269DA3E1005AB255 /* Upload.swift */; };
+		5B201B1C26B97D1C005AB255 /* DepthCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B201B1B26B97D1B005AB255 /* DepthCapture.swift */; };
+		5B201B1E26B98CC3005AB255 /* MultiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B201B1D26B98CC3005AB255 /* MultiView.swift */; };
 		5B850FD92692E54600270DB8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B850FD82692E54600270DB8 /* ContentView.swift */; };
 		5B850FDB2692E56600270DB8 /* ExperimentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B850FDA2692E56600270DB8 /* ExperimentView.swift */; };
 /* End PBXBuildFile section */
@@ -50,6 +52,8 @@
 		5B201AB4269DA3E1005AB255 /* Operation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Operation.swift; sourceTree = "<group>"; };
 		5B201AB5269DA3E1005AB255 /* Upload.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Upload.swift; sourceTree = "<group>"; };
 		5B201ABB269DA409005AB255 /* SwiftHTTP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftHTTP.h; sourceTree = "<group>"; };
+		5B201B1B26B97D1B005AB255 /* DepthCapture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DepthCapture.swift; sourceTree = "<group>"; };
+		5B201B1D26B98CC3005AB255 /* MultiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiView.swift; sourceTree = "<group>"; };
 		5B850FD82692E54600270DB8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5B850FDA2692E56600270DB8 /* ExperimentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -93,6 +97,8 @@
 				5B201AAE269C2706005AB255 /* CHCSVParser.h */,
 				5B201AAF269C2706005AB255 /* CHCSVParser.m */,
 				5B850FD82692E54600270DB8 /* ContentView.swift */,
+				5B201B1B26B97D1B005AB255 /* DepthCapture.swift */,
+				5B201B1D26B98CC3005AB255 /* MultiView.swift */,
 				5B201AB2269DA3E1005AB255 /* HTTPSecurity.swift */,
 				5B201ABB269DA409005AB255 /* SwiftHTTP.h */,
 				5B201AB4269DA3E1005AB255 /* Operation.swift */,
@@ -192,6 +198,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5B201B1E26B98CC3005AB255 /* MultiView.swift in Sources */,
 				5B201ABA269DA3E1005AB255 /* Upload.swift in Sources */,
 				579AEADD23D4A07D00FD5D4B /* AppDelegate.swift in Sources */,
 				579AEADF23D4A07D00FD5D4B /* SceneDelegate.swift in Sources */,
@@ -201,6 +208,7 @@
 				579AEAE123D4A07D00FD5D4B /* MainView.swift in Sources */,
 				579AEAF123D4A0C400FD5D4B /* CameraView.swift in Sources */,
 				579AEAF323D4A27800FD5D4B /* CameraController.swift in Sources */,
+				5B201B1C26B97D1C005AB255 /* DepthCapture.swift in Sources */,
 				5B201AB7269DA3E1005AB255 /* HTTPSecurity.swift in Sources */,
 				5B201AB6269DA3E1005AB255 /* Request.swift in Sources */,
 				5B201AB9269DA3E1005AB255 /* Operation.swift in Sources */,

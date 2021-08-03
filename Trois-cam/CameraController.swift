@@ -10,28 +10,37 @@ import UIKit
 import AVFoundation
 import Combine
 import Photos
+import Accelerate
 
-class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
+class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate, AVCaptureDepthDataOutputDelegate{
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         print("finishrecording")
-//        // Check the authorization status.
-//        PHPhotoLibrary.requestAuthorization { status in
-//            if status == .authorized {
-//                // Save the movie file to the photo library and cleanup.
-//                PHPhotoLibrary.shared().performChanges({
-//                    let options = PHAssetResourceCreationOptions()
-//                    options.shouldMoveFile = true
-//                    let creationRequest = PHAssetCreationRequest.forAsset()
-//                    creationRequest.addResource(with: .video, fileURL: outputFileURL, options: options)
-//
-//                }
-//                )
-//            }
-//        }
+        //        // Check the authorization status.
+        //        PHPhotoLibrary.requestAuthorization { status in
+        //            if status == .authorized {
+        //                // Save the movie file to the photo library and cleanup.
+        //                PHPhotoLibrary.shared().performChanges({
+        //                    let options = PHAssetResourceCreationOptions()
+        //                    options.shouldMoveFile = true
+        //                    let creationRequest = PHAssetCreationRequest.forAsset()
+        //                    creationRequest.addResource(with: .video, fileURL: outputFileURL, options: options)
+        //
+        //                }
+        //                )
+        //            }
+        //        }
     }
     
     func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
         print("StartRecording")
+    }
+    
+    func depthDataOutput(_ output: AVCaptureDepthDataOutput, didOutput depthData: AVDepthData, timestamp: CMTime, connection: AVCaptureConnection) {
+   
+        if(self.recording) {
+            let ddm = depthData.depthDataMap
+            depthCapture.addPixelBuffers(pixelBuffer: ddm)
+        }
     }
     
     
@@ -42,9 +51,12 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
     var captureSession: AVCaptureMultiCamSession? {
         return self.session
     }
-    
+    private let depthCapture = DepthCapture()
     private var movieFileOutput: AVCaptureMovieFileOutput?
     private var movieFileOutput2: AVCaptureMovieFileOutput?
+    private var depthOutput: AVCaptureDepthDataOutput?
+    private var recording = false
+    private let dataOutputQueue = DispatchQueue(label: "dataOutputQueue")
     
     static func addConnection(session: AVCaptureMultiCamSession,layer: AVCaptureVideoPreviewLayer, index: Int){
         
@@ -62,6 +74,7 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
     var anyCan:AnyCancellable!
     
     func startRecord(){
+        recording = true
         sessionQueue.async {
             
             
@@ -70,8 +83,8 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
             if self.movieFileOutput?.isRecording == false{
                 let lowerbound = String.Index(encodedOffset: 1)
                 let outputFileName = ExperimentStr[lowerbound...] +  "_Front"
-//                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
-
+                //                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
+                
                 let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
                 let fileUrl = paths[0].appendingPathComponent(outputFileName + ".mov")
                 print(fileUrl.absoluteString)
@@ -81,46 +94,60 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
             }}}
     
     func stopRecord(){
+        self.recording = false
+        
         sessionQueue.async {
             
             //        print(movieFileOutput?.isRecording)
             self.movieFileOutput?.stopRecording()
             //        print(movieFileOutput?.isRecording)
+        
+            
+        }
+        do {
+            try depthCapture.finishRecording(success: { (url: URL) -> Void in
+                print(url.absoluteString)
+            })
+        } catch {
+            print("Error while finishing depth capture.")
         }
     }
     
     func startRecord2(){
         sessionQueue.async {
             
-
+            
             if self.movieFileOutput2?.isRecording == false{
                 let lowerbound = String.Index(encodedOffset: 1)
                 let outputFileName = ExperimentStr[lowerbound...] + "_finger"
-//                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
+                //                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
                 
                 let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
                 let fileUrl = paths[0].appendingPathComponent(outputFileName + ".mov")
                 
                 self.movieFileOutput2?.startRecording(to: fingerURL, recordingDelegate: self)
-
+                
             }}}
     
     func stopRecord2(){
         sessionQueue.async {
-
+            
             self.movieFileOutput2?.stopRecording()
         }
     }
     
+    func prepareDepth(){
+        self.depthCapture.prepareForRecording()
+    }
+    
     override init() {
-        
+        super.init()
         #if !targetEnvironment(simulator)
         
         guard AVCaptureMultiCamSession.isMultiCamSupported else {
             print("unsupported")
             return
         }
-        
         
         session = AVCaptureMultiCamSession()
         session.beginConfiguration()
@@ -134,7 +161,10 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
         let input1 = try! AVCaptureDeviceInput(device: device1)
         session.addInputWithNoConnections(input1)
         
-        
+        let dOutput = AVCaptureDepthDataOutput()
+        dOutput.isFilteringEnabled = false
+        dOutput.setDelegate(self, callbackQueue: dataOutputQueue)
+        self.depthOutput = dOutput
         
         let output = AVCaptureMovieFileOutput()
         self.movieFileOutput = output
@@ -145,8 +175,37 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate {
         
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         
+        let depthFormats = device2.activeFormat.supportedDepthDataFormats
+        let filtered = depthFormats.filter({
+            CMFormatDescriptionGetMediaSubType($0.formatDescription) == kCVPixelFormatType_DepthFloat16
+        })
+        
+        let selectedFormat = filtered.max(by: {
+            first, second in CMVideoFormatDescriptionGetDimensions(first.formatDescription).width < CMVideoFormatDescriptionGetDimensions(second.formatDescription).width
+        })
+        print(selectedFormat)
+        
+        do {
+            try device2.lockForConfiguration()
+            device2.activeDepthDataFormat = selectedFormat
+            device2.unlockForConfiguration()
+        } catch {
+            print("Could not lock device for configuration: \(error)")
+            
+        }
+        
         session.addOutput(output)
         session.addOutput(output2)
+        session.addOutput(dOutput)
+        
+        if let connection = dOutput.connection(with: .depthData) {
+            connection.isEnabled = true
+            dOutput.isFilteringEnabled = false
+            dOutput.setDelegate(self, callbackQueue: dataOutputQueue)
+        } else {
+            print("No AVCaptureConnection")
+        }
+//        depthCapture.prepareForRecording()
         session.commitConfiguration()
         
         session.startRunning()
