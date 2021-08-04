@@ -77,7 +77,7 @@ struct MultiView: View{
                 
             }
             
-            Button(action: {toggleTorch(on: true);cameraSource.prepareDepth()},label:{Text("Flash")})
+            Button(action: {toggleTorch(on: true);},label:{Text("Flash")})
             Text("Time:\(timeRemaining)")
             Button(action: {manualISO();selectedMode="Manual"},label:{Text("manual")})
             Button(action: {autoISO();selectedMode = "Auto"},label:{Text("auto")})

@@ -37,10 +37,10 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate, AVCapture
     
     func depthDataOutput(_ output: AVCaptureDepthDataOutput, didOutput depthData: AVDepthData, timestamp: CMTime, connection: AVCaptureConnection) {
    
-        if(self.recording) {
-            let ddm = depthData.depthDataMap
-            depthCapture.addPixelBuffers(pixelBuffer: ddm)
-        }
+//        if(self.recording) {
+//            let ddm = depthData.depthDataMap
+//            depthCapture.addPixelBuffers(pixelBuffer: ddm)
+//        }
     }
     
     
@@ -51,10 +51,10 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate, AVCapture
     var captureSession: AVCaptureMultiCamSession? {
         return self.session
     }
-    private let depthCapture = DepthCapture()
+//    private let depthCapture = DepthCapture()
     private var movieFileOutput: AVCaptureMovieFileOutput?
     private var movieFileOutput2: AVCaptureMovieFileOutput?
-    private var depthOutput: AVCaptureDepthDataOutput?
+//    private var depthOutput: AVCaptureDepthDataOutput?
     private var recording = false
     private let dataOutputQueue = DispatchQueue(label: "dataOutputQueue")
     
@@ -104,13 +104,13 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate, AVCapture
         
             
         }
-        do {
-            try depthCapture.finishRecording(success: { (url: URL) -> Void in
-                print(url.absoluteString)
-            })
-        } catch {
-            print("Error while finishing depth capture.")
-        }
+//        do {
+//            try depthCapture.finishRecording(success: { (url: URL) -> Void in
+//                print(url.absoluteString)
+//            })
+//        } catch {
+//            print("Error while finishing depth capture.")
+//        }
     }
     
     func startRecord2(){
@@ -136,9 +136,9 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate, AVCapture
         }
     }
     
-    func prepareDepth(){
-        self.depthCapture.prepareForRecording()
-    }
+//    func prepareDepth(){
+//        self.depthCapture.prepareForRecording()
+//    }
     
     override init() {
         super.init()
@@ -161,10 +161,10 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate, AVCapture
         let input1 = try! AVCaptureDeviceInput(device: device1)
         session.addInputWithNoConnections(input1)
         
-        let dOutput = AVCaptureDepthDataOutput()
-        dOutput.isFilteringEnabled = false
-        dOutput.setDelegate(self, callbackQueue: dataOutputQueue)
-        self.depthOutput = dOutput
+//        let dOutput = AVCaptureDepthDataOutput()
+//        dOutput.isFilteringEnabled = false
+//        dOutput.setDelegate(self, callbackQueue: dataOutputQueue)
+//        self.depthOutput = dOutput
         
         let output = AVCaptureMovieFileOutput()
         self.movieFileOutput = output
@@ -175,36 +175,33 @@ class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate, AVCapture
         
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         
-        let depthFormats = device2.activeFormat.supportedDepthDataFormats
-        let filtered = depthFormats.filter({
-            CMFormatDescriptionGetMediaSubType($0.formatDescription) == kCVPixelFormatType_DepthFloat16
-        })
         
-        let selectedFormat = filtered.max(by: {
-            first, second in CMVideoFormatDescriptionGetDimensions(first.formatDescription).width < CMVideoFormatDescriptionGetDimensions(second.formatDescription).width
-        })
-        print(selectedFormat)
         
+//        for i in 0..<device2.formats.count{
+//            print(String(i) + ": " + device2.formats[i].description)
+//        }
+//
         do {
             try device2.lockForConfiguration()
-            device2.activeDepthDataFormat = selectedFormat
+           
+            device2.activeFormat = device2.formats[26]
             device2.unlockForConfiguration()
         } catch {
             print("Could not lock device for configuration: \(error)")
             
         }
-        
+        print(device2.activeFormat)
         session.addOutput(output)
         session.addOutput(output2)
-        session.addOutput(dOutput)
+//        session.addOutput(dOutput)
         
-        if let connection = dOutput.connection(with: .depthData) {
-            connection.isEnabled = true
-            dOutput.isFilteringEnabled = false
-            dOutput.setDelegate(self, callbackQueue: dataOutputQueue)
-        } else {
-            print("No AVCaptureConnection")
-        }
+//        if let connection = dOutput.connection(with: .depthData) {
+//            connection.isEnabled = true
+//            dOutput.isFilteringEnabled = false
+//            dOutput.setDelegate(self, callbackQueue: dataOutputQueue)
+//        } else {
+//            print("No AVCaptureConnection")
+//        }
 //        depthCapture.prepareForRecording()
         session.commitConfiguration()
         
