@@ -11,6 +11,7 @@ import AVFoundation
 import Combine
 import Photos
 import Accelerate
+import ARKit
 
 class CameraController:NSObject, AVCaptureFileOutputRecordingDelegate, AVCaptureDepthDataOutputDelegate{
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
